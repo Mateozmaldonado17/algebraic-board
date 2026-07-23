@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DrawingCanvas, type DrawingCanvasHandle } from "@/components/drawing-canvas";
 import { MarqueeSelectionLayer } from "@/components/marquee-selection-layer";
 import { Toolbar } from "@/components/toolbar";
@@ -169,6 +169,20 @@ export function Board() {
 
     await downloadBoardSelection(board, committedSelection);
   }, [committedSelection]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      clearMarqueeSelection();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [clearMarqueeSelection]);
 
   return (
     <>
