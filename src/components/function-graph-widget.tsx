@@ -1,11 +1,12 @@
 "use client";
 
 import functionPlot from "function-plot";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { buildFunctionPlotOptions } from "@/lib/function-plot-examples";
 import {
   GRAPH_WIDGET_HEADER_HEIGHT,
   GRAPH_WIDGET_MIN_SIZE,
+  LOADING_STEP_MESSAGES,
   type GraphWidgetState,
 } from "@/lib/graph-widget";
 
@@ -39,14 +40,41 @@ export function FunctionGraphWidget({
   const plotTargetRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<DragState | null>(null);
   const resizeStateRef = useRef<ResizeState | null>(null);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
 
   const plotHeight = Math.max(
     120,
     widget.height - GRAPH_WIDGET_HEADER_HEIGHT,
   );
   const plotWidth = Math.max(120, widget.width);
+  const isLoading = widget.status === "loading";
+  const isError = widget.status === "error";
+
+  const loadingMessages = widget.loadingStep
+    ? [
+        LOADING_STEP_MESSAGES[widget.loadingStep],
+        "Analizando trazos con visión artificial...",
+        "Preparando function-plot...",
+      ]
+    : ["Procesando..."];
 
   useEffect(() => {
+    if (!isLoading) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setLoadingMessageIndex((current) => (current + 1) % loadingMessages.length);
+    }, 1400);
+
+    return () => window.clearInterval(intervalId);
+  }, [isLoading, loadingMessages.length]);
+
+  useEffect(() => {
+    if (widget.status !== "ready" || !widget.example) {
+      return;
+    }
+
     const target = plotTargetRef.current;
 
     if (!target) {
@@ -64,7 +92,7 @@ export function FunctionGraphWidget({
         height: plotHeight,
       }),
     );
-  }, [plotHeight, plotWidth, widget.example]);
+  }, [plotHeight, plotWidth, widget.example, widget.status]);
 
   const handleDragPointerDown = (
     event: React.PointerEvent<HTMLDivElement>,
@@ -164,9 +192,25 @@ export function FunctionGraphWidget({
     resizeStateRef.current = null;
   };
 
+  const title =
+    widget.status === "ready" && widget.example
+      ? widget.example.label
+      : widget.status === "error"
+        ? "Error de interpretación"
+        : "Analizando función";
+
+  const subtitle =
+    widget.status === "ready"
+      ? (typeof widget.example?.options.data?.[0]?.fn === "string"
+          ? widget.example.options.data[0].fn
+          : widget.detectedExpression)
+      : widget.status === "error"
+        ? widget.errorMessage
+        : loadingMessages[loadingMessageIndex];
+
   return (
     <div
-      className="function-graph-widget"
+      className={`function-graph-widget${isLoading ? " function-graph-widget--loading" : ""}${isError ? " function-graph-widget--error" : ""}`}
       style={{
         left: widget.x,
         top: widget.y,
@@ -183,14 +227,8 @@ export function FunctionGraphWidget({
         onPointerCancel={handleDragPointerUp}
       >
         <div className="function-graph-widget__header-text">
-          <span className="function-graph-widget__title">
-            {widget.example.label}
-          </span>
-          <span className="function-graph-widget__subtitle">
-            {typeof widget.example.options.data?.[0]?.fn === "string"
-              ? widget.example.options.data[0].fn
-              : widget.example.description}
-          </span>
+          <span className="function-graph-widget__title">{title}</span>
+          <span className="function-graph-widget__subtitle">{subtitle}</span>
         </div>
 
         <button
@@ -212,16 +250,36 @@ export function FunctionGraphWidget({
         ref={plotTargetRef}
         className="function-graph-widget__plot"
         style={{ height: plotHeight }}
-      />
+      >
+        {isLoading ? (
+          <div className="function-graph-widget__loading">
+            <div className="function-graph-widget__spinner" aria-hidden />
+            <p className="function-graph-widget__loading-text">
+              {loadingMessages[loadingMessageIndex]}
+            </p>
+            <div className="function-graph-widget__loading-bar">
+              <div className="function-graph-widget__loading-bar-fill" />
+            </div>
+          </div>
+        ) : null}
 
-      <div
-        className="function-graph-widget__resize-handle"
-        aria-hidden
-        onPointerDown={handleResizePointerDown}
-        onPointerMove={handleResizePointerMove}
-        onPointerUp={handleResizePointerUp}
-        onPointerCancel={handleResizePointerUp}
-      />
+        {isError ? (
+          <div className="function-graph-widget__error">
+            <p>No se pudo interpretar la función manuscrita.</p>
+          </div>
+        ) : null}
+      </div>
+
+      {!isLoading ? (
+        <div
+          className="function-graph-widget__resize-handle"
+          aria-hidden
+          onPointerDown={handleResizePointerDown}
+          onPointerMove={handleResizePointerMove}
+          onPointerUp={handleResizePointerUp}
+          onPointerCancel={handleResizePointerUp}
+        />
+      ) : null}
     </div>
   );
 }

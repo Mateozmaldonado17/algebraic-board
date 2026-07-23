@@ -168,6 +168,17 @@ body {
   touch-action: none;
 }
 
+.function-graph-widget--loading {
+  border-color: #71717a;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(161, 161, 170, 0.15);
+}
+
+.function-graph-widget--error {
+  border-color: #f87171;
+}
+
 .function-graph-widget__header {
   display: flex;
   align-items: center;
@@ -243,6 +254,67 @@ body {
 .function-graph-widget__plot-root {
   width: 100%;
   height: 100%;
+}
+
+.function-graph-widget__loading,
+.function-graph-widget__error {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.function-graph-widget__loading-text,
+.function-graph-widget__error p {
+  margin: 0;
+  color: #52525b;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.function-graph-widget__spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #d4d4d8;
+  border-top-color: #71717a;
+  border-radius: 999px;
+  animation: graph-widget-spin 0.9s linear infinite;
+}
+
+.function-graph-widget__loading-bar {
+  width: min(180px, 70%);
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e4e4e7;
+}
+
+.function-graph-widget__loading-bar-fill {
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #71717a, #a1a1aa, #71717a);
+  animation: graph-widget-progress 1.4s ease-in-out infinite;
+}
+
+@keyframes graph-widget-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes graph-widget-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(260%);
+  }
 }
 
 .function-graph-widget__resize-handle {

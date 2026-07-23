@@ -5,10 +5,15 @@ import { DrawingCanvas, type DrawingCanvasHandle } from "@/components/drawing-ca
 import { FunctionGraphWidget } from "@/components/function-graph-widget";
 import { MarqueeSelectionLayer } from "@/components/marquee-selection-layer";
 import { Toolbar } from "@/components/toolbar";
+import { captureBoardSelectionAsDataUrl } from "@/lib/capture-board-selection";
 import {
-  createGraphWidgetState,
+  createLoadingGraphWidgetState,
   type GraphWidgetState,
 } from "@/lib/graph-widget";
+import {
+  aiPlotResponseSchema,
+  toFunctionPlotExample,
+} from "@/lib/parse-ai-plot-response";
 import {
   getRelativePoint,
   isValidSelection,
@@ -171,20 +176,80 @@ export function Board() {
     [activeTool, releasePointer],
   );
 
-  const handleShowGraph = useCallback(() => {
+  const handleShowGraph = useCallback(async () => {
     const board = boardRef.current;
 
-    if (!board || !committedSelection) {
+    if (!board || !committedSelection || graphWidget?.status === "loading") {
       return;
     }
 
-    setGraphWidget(
-      createGraphWidgetState(committedSelection, {
-        width: board.clientWidth,
-        height: board.clientHeight,
-      }),
-    );
-  }, [committedSelection]);
+    const boardSize = {
+      width: board.clientWidth,
+      height: board.clientHeight,
+    };
+
+    setGraphWidget(createLoadingGraphWidgetState(committedSelection, boardSize));
+
+    try {
+      const imageBase64 = await captureBoardSelectionAsDataUrl(
+        board,
+        committedSelection,
+      );
+
+      setGraphWidget((current) =>
+        current
+          ? { ...current, loadingStep: "interpreting" }
+          : current,
+      );
+
+      const response = await fetch("/api/recognize-function", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64 }),
+      });
+
+      const payload = (await response.json()) as unknown;
+
+      if (!response.ok) {
+        const errorMessage =
+          typeof payload === "object" &&
+          payload !== null &&
+          "error" in payload &&
+          typeof payload.error === "string"
+            ? payload.error
+            : "No se pudo interpretar la función.";
+
+        throw new Error(errorMessage);
+      }
+
+      const aiResponse = aiPlotResponseSchema.parse(payload);
+
+      setGraphWidget((current) =>
+        current
+          ? {
+              ...current,
+              status: "ready",
+              loadingStep: "plotting",
+              example: toFunctionPlotExample(aiResponse),
+              detectedExpression: aiResponse.detectedExpression,
+            }
+          : current,
+      );
+    } catch (error) {
+      setGraphWidget((current) =>
+        current
+          ? {
+              ...current,
+              status: "error",
+              errorMessage:
+                error instanceof Error
+                  ? error.message
+                  : "Error desconocido al interpretar la función.",
+            }
+          : current,
+      );
+    }
+  }, [committedSelection, graphWidget?.status]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -222,6 +287,7 @@ export function Board() {
         <MarqueeSelectionLayer
           draftSelection={draftSelection}
           committedSelection={committedSelection}
+          isProcessing={graphWidget?.status === "loading"}
           onShowGraph={handleShowGraph}
         />
       </div>

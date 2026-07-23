@@ -6,12 +6,14 @@ import type { SelectionRect } from "@/types/selection";
 type MarqueeSelectionLayerProps = {
   draftSelection: SelectionRect | null;
   committedSelection: SelectionRect | null;
+  isProcessing?: boolean;
   onShowGraph: () => void;
 };
 
 export function MarqueeSelectionLayer({
   draftSelection,
   committedSelection,
+  isProcessing = false,
   onShowGraph,
 }: MarqueeSelectionLayerProps) {
   const activeSelection = draftSelection ?? committedSelection;
@@ -45,6 +47,7 @@ export function MarqueeSelectionLayer({
           title="Mostrar gráfica"
           onClick={onShowGraph}
           onPointerDown={(event) => event.stopPropagation()}
+          disabled={isProcessing}
         >
           <ChartIcon className="marquee-download-icon" />
         </button>
