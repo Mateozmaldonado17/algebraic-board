@@ -2,9 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DrawingCanvas, type DrawingCanvasHandle } from "@/components/drawing-canvas";
+import { FunctionGraphWidget } from "@/components/function-graph-widget";
 import { MarqueeSelectionLayer } from "@/components/marquee-selection-layer";
 import { Toolbar } from "@/components/toolbar";
-import { downloadBoardSelection } from "@/lib/download-board-selection";
+import {
+  GRAPH_WIDGET_MIN_SIZE,
+  pickRandomFunctionPlotExample,
+  type GraphWidgetState,
+} from "@/lib/graph-widget";
 import {
   getRelativePoint,
   isValidSelection,
@@ -29,11 +34,18 @@ export function Board() {
   );
   const [committedSelection, setCommittedSelection] =
     useState<SelectionRect | null>(null);
+  const [graphWidget, setGraphWidget] = useState<GraphWidgetState | null>(
+    null,
+  );
 
   const clearMarqueeSelection = useCallback(() => {
     dragStartRef.current = null;
     setDraftSelection(null);
     setCommittedSelection(null);
+  }, []);
+
+  const clearGraphWidget = useCallback(() => {
+    setGraphWidget(null);
   }, []);
 
   const handleToolChange = useCallback(
@@ -160,15 +172,24 @@ export function Board() {
     [activeTool, releasePointer],
   );
 
-  const handleDownload = useCallback(async () => {
-    const board = boardRef.current;
-
-    if (!board || !committedSelection) {
+  const handleShowGraph = useCallback(() => {
+    if (!committedSelection) {
       return;
     }
 
-    await downloadBoardSelection(board, committedSelection);
-  }, [committedSelection]);
+    const example = pickRandomFunctionPlotExample();
+
+    setGraphWidget({
+      id: crypto.randomUUID(),
+      example,
+      x: committedSelection.x,
+      y: committedSelection.y,
+      width: Math.max(GRAPH_WIDGET_MIN_SIZE, committedSelection.width),
+      height: Math.max(GRAPH_WIDGET_MIN_SIZE, committedSelection.height),
+    });
+
+    clearMarqueeSelection();
+  }, [clearMarqueeSelection, committedSelection]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -177,12 +198,13 @@ export function Board() {
       }
 
       clearMarqueeSelection();
+      clearGraphWidget();
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [clearMarqueeSelection]);
+  }, [clearGraphWidget, clearMarqueeSelection]);
 
   return (
     <>
@@ -196,10 +218,16 @@ export function Board() {
         onPointerCancel={finishInteraction}
       >
         <DrawingCanvas ref={drawingRef} />
+        {graphWidget ? (
+          <FunctionGraphWidget
+            widget={graphWidget}
+            onChange={setGraphWidget}
+          />
+        ) : null}
         <MarqueeSelectionLayer
           draftSelection={draftSelection}
           committedSelection={committedSelection}
-          onDownload={handleDownload}
+          onShowGraph={handleShowGraph}
         />
       </div>
       <Toolbar activeTool={activeTool} onToolChange={handleToolChange} />

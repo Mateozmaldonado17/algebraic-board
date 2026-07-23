@@ -1,41 +1,25 @@
 "use client";
 
-import { useState } from "react";
 import { ChartIcon } from "@/components/icons/chart-icon";
 import type { SelectionRect } from "@/types/selection";
 
 type MarqueeSelectionLayerProps = {
   draftSelection: SelectionRect | null;
   committedSelection: SelectionRect | null;
-  onDownload: () => Promise<void>;
+  onShowGraph: () => void;
 };
 
 export function MarqueeSelectionLayer({
   draftSelection,
   committedSelection,
-  onDownload,
+  onShowGraph,
 }: MarqueeSelectionLayerProps) {
-  const [isDownloading, setIsDownloading] = useState(false);
   const activeSelection = draftSelection ?? committedSelection;
   const isDraft = draftSelection !== null;
 
   if (!activeSelection) {
     return null;
   }
-
-  const handleDownload = async () => {
-    if (isDraft || isDownloading) {
-      return;
-    }
-
-    setIsDownloading(true);
-
-    try {
-      await onDownload();
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   return (
     <>
@@ -57,11 +41,10 @@ export function MarqueeSelectionLayer({
             left: committedSelection.x + committedSelection.width / 2,
             top: committedSelection.y + committedSelection.height + 10,
           }}
-          aria-label="Descargar selección"
-          title="Descargar selección"
-          onClick={handleDownload}
+          aria-label="Mostrar gráfica"
+          title="Mostrar gráfica"
+          onClick={onShowGraph}
           onPointerDown={(event) => event.stopPropagation()}
-          disabled={isDownloading}
         >
           <ChartIcon className="marquee-download-icon" />
         </button>

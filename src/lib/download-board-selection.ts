@@ -6,7 +6,7 @@ export async function downloadBoardSelection(
   selection: SelectionRect,
 ) {
   const overlays = boardElement.querySelectorAll(
-    ".marquee-box, .marquee-download",
+    ".marquee-box, .marquee-download, .function-graph-widget",
   );
 
   overlays.forEach((element) => {

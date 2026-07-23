@@ -75,13 +75,14 @@ export const functionPlotExamples: FunctionPlotExample[] = [
 ];
 
 export function buildFunctionPlotOptions(
-  target: string,
+  target: string | HTMLElement,
   example: FunctionPlotExample,
+  size: { width: number; height: number },
 ): FunctionPlotOptions {
   return {
     target,
-    width: 480,
-    height: 480,
+    width: size.width,
+    height: size.height,
     grid: true,
     disableZoom: false,
     ...example.options,
