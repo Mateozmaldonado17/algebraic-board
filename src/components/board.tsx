@@ -6,8 +6,7 @@ import { FunctionGraphWidget } from "@/components/function-graph-widget";
 import { MarqueeSelectionLayer } from "@/components/marquee-selection-layer";
 import { Toolbar } from "@/components/toolbar";
 import {
-  GRAPH_WIDGET_MIN_SIZE,
-  pickRandomFunctionPlotExample,
+  createGraphWidgetState,
   type GraphWidgetState,
 } from "@/lib/graph-widget";
 import {
@@ -173,23 +172,19 @@ export function Board() {
   );
 
   const handleShowGraph = useCallback(() => {
-    if (!committedSelection) {
+    const board = boardRef.current;
+
+    if (!board || !committedSelection) {
       return;
     }
 
-    const example = pickRandomFunctionPlotExample();
-
-    setGraphWidget({
-      id: crypto.randomUUID(),
-      example,
-      x: committedSelection.x,
-      y: committedSelection.y,
-      width: Math.max(GRAPH_WIDGET_MIN_SIZE, committedSelection.width),
-      height: Math.max(GRAPH_WIDGET_MIN_SIZE, committedSelection.height),
-    });
-
-    clearMarqueeSelection();
-  }, [clearMarqueeSelection, committedSelection]);
+    setGraphWidget(
+      createGraphWidgetState(committedSelection, {
+        width: board.clientWidth,
+        height: board.clientHeight,
+      }),
+    );
+  }, [committedSelection]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -198,13 +193,12 @@ export function Board() {
       }
 
       clearMarqueeSelection();
-      clearGraphWidget();
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [clearGraphWidget, clearMarqueeSelection]);
+  }, [clearMarqueeSelection]);
 
   return (
     <>
@@ -222,6 +216,7 @@ export function Board() {
           <FunctionGraphWidget
             widget={graphWidget}
             onChange={setGraphWidget}
+            onClose={clearGraphWidget}
           />
         ) : null}
         <MarqueeSelectionLayer

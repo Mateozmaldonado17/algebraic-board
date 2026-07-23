@@ -170,14 +170,48 @@ body {
 
 .function-graph-widget__header {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
   height: 36px;
-  justify-content: center;
-  padding: 0 12px;
+  padding: 0 8px 0 12px;
   border-bottom: 1px solid #3f3f46;
   background: rgba(39, 39, 42, 0.95);
   cursor: grab;
+}
+
+.function-graph-widget__header-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  justify-content: center;
+}
+
+.function-graph-widget__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #a1a1aa;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.function-graph-widget__close:hover {
+  border-color: #52525b;
+  background: #3f3f46;
+  color: #fafafa;
 }
 
 .function-graph-widget__header:active {

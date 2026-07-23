@@ -12,6 +12,7 @@ import {
 type FunctionGraphWidgetProps = {
   widget: GraphWidgetState;
   onChange: (widget: GraphWidgetState) => void;
+  onClose: () => void;
 };
 
 type DragState = {
@@ -33,6 +34,7 @@ type ResizeState = {
 export function FunctionGraphWidget({
   widget,
   onChange,
+  onClose,
 }: FunctionGraphWidgetProps) {
   const plotTargetRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<DragState | null>(null);
@@ -180,12 +182,30 @@ export function FunctionGraphWidget({
         onPointerUp={handleDragPointerUp}
         onPointerCancel={handleDragPointerUp}
       >
-        <span className="function-graph-widget__title">{widget.example.label}</span>
-        <span className="function-graph-widget__subtitle">
-          {typeof widget.example.options.data?.[0]?.fn === "string"
-            ? widget.example.options.data[0].fn
-            : widget.example.description}
-        </span>
+        <div className="function-graph-widget__header-text">
+          <span className="function-graph-widget__title">
+            {widget.example.label}
+          </span>
+          <span className="function-graph-widget__subtitle">
+            {typeof widget.example.options.data?.[0]?.fn === "string"
+              ? widget.example.options.data[0].fn
+              : widget.example.description}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          className="function-graph-widget__close"
+          aria-label="Cerrar gráfica"
+          title="Cerrar gráfica"
+          onClick={(event) => {
+            event.stopPropagation();
+            onClose();
+          }}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          ×
+        </button>
       </div>
 
       <div
